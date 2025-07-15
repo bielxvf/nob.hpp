@@ -318,6 +318,8 @@ bool extract_bz2(const fs::path& compressed,
         }
     }
 
+    /* TODO: THIS WON'T WORK because this isnt a shell command its execvp, we probably need to cmd.run_syn_capture() */
+    /*       and then write to the output file ourselves */
     if (out) {
         cmd.add(">", out->string()); /* Redirect to chosen file */
     }
@@ -371,6 +373,8 @@ bool extract_gz(const fs::path& compressed,
 
     cmd.add(compressed.string());
 
+    /* TODO: THIS WON'T WORK because this isnt a shell command its execvp, we probably need to cmd.run_syn_capture() */
+    /*       and then write to the output file ourselves */
     if (out) {
             cmd.add(">", out->string()); /* Redirect to chosen file */
     }
