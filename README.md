@@ -7,7 +7,5 @@ Tsoding's [nob.h](https://github.com/tsoding/nob.h) but in C++ because I'm tryin
 
 # TODO
 - Asynchronous commands
-- Easily download things (like libraries)
-- Decompress easily
 - Command line "subcommands"/option handling for things like `./nob build` or `./nob test`
 - Maybe handle dependencies as structs so its easier to make little changes for users
