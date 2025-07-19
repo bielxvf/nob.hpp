@@ -34,29 +34,22 @@ namespace nob {
 
 namespace fs = std::filesystem;
 
-/* Logging */
-/* TODO: Mutex shouldn't block different streams!! */
-enum class LogLevel {
-    Info,
-    Warning,
-    Error,
-};
-
 enum class Verbosity {
     Quiet,
     Quieter,
     Verbose,
 };
 
-template<typename... Args>
-void log(LogLevel lvl, Args&&... args)
-{
-    log(std::cout, lvl, std::forward<Args>(args)...);
-}
+enum class LogLevel {
+    Info,
+    Warning,
+    Error,
+};
 
 template<typename... Args>
 void log(std::ostream& out, LogLevel lvl, Args&&... args)
 {
+    /* TODO: Mutex shouldn't block different streams!! */
     static std::mutex mtx;
     std::lock_guard<std::mutex> lock(mtx);
 
@@ -85,11 +78,23 @@ void error(Args&&... args)
     log(std::cerr, LogLevel::Error, std::forward<Args>(args)...);
 }
 
+template<typename... Args>
+void info(Args&&... args)
+{
+    log(std::cout, LogLevel::Info, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+void warning(Args&&... args)
+{
+    log(std::cout, LogLevel::Warning, std::forward<Args>(args)...);
+}
+
 bool mkdir(const fs::path& path)
 {
     if (fs::exists(path)) {
         if (fs::is_directory(path)) {
-            log(LogLevel::Info, path, " already exists, not creating");
+            info(path, " already exists, not creating");
             return true;
         }
 
@@ -97,6 +102,29 @@ bool mkdir(const fs::path& path)
     }
 
     return fs::create_directories(path);
+}
+
+void remove(const fs::path& path)
+{
+    info("Removing ", path);
+    fs::remove(path);
+}
+
+void remove_recursive(const fs::path& path)
+{
+    info("Removing recursively ", path);
+    fs::remove_all(path);
+}
+
+fs::path get_project_root()
+{
+    return fs::path(get_executable_path()).remove_filename();
+}
+
+bool cd(const fs::path& path)
+{
+    fs::current_path(path);
+    return true; /* TODO */
 }
 
 class Cmd {
@@ -122,7 +150,7 @@ public:
 
     int run_sync()
     {
-        log(LogLevel::Info, "Running sync: ", *this);
+        info("Running sync: ", *this);
         std::vector<char*> argv;
         for (auto& s : m_command) {
             argv.push_back(s.data());
@@ -135,7 +163,7 @@ public:
             throw std::runtime_error("run_sync(): fork() failed: " + std::string(std::strerror(errno)));
         } else if (pid == 0) {
             if (m_working_dir != ".") {
-                log(LogLevel::Info, "Changing working dir to ", m_working_dir);
+                info("Changing working dir to ", m_working_dir);
                 fs::current_path(m_working_dir);
             }
             execvp(argv[0], argv.data());
@@ -155,7 +183,7 @@ public:
     /* TODO: handle stderr */
     int run_sync_capture(std::ostream& out)
     {
-        log(LogLevel::Info, "Running sync capture: ", *this);
+        info("Running sync capture: ", *this);
 
         std::vector<char*> argv;
         for (auto s : m_command) {
@@ -233,7 +261,7 @@ void go_rebuild_urself(int argc, char** argv, fs::path source_path)
     auto source_time = fs::last_write_time(source_path);
 
     if (source_time > binary_time) {
-        log(LogLevel::Info, "Rebuilding meself");
+        info("Rebuilding meself");
         Cmd cmd("c++", source_path, "-o", binary_path);
         if (cmd.run_sync() != 0) {
             throw std::runtime_error("go_rebuild_urself(): Rebuild failed");
@@ -289,9 +317,10 @@ bool extract_tar_gz(const fs::path& archive,
 
     cmd.add("-f", archive.string());
 
-    // if (out) {
-    //     cmd.add("-C", out->string());
-    // }
+    if (out) {
+        mkdir(out->string());
+        cmd.add("-C", out->string());
+    }
 
     return cmd.run_sync() == 0;
 }
@@ -453,10 +482,6 @@ bool download_and_extract(const std::string& url,
 
     if (!download(url, archive_path, v)) {
         return false;
-    }
-
-    if (out) {
-        mkdir(*out);
     }
 
     return extract(archive_path, out.value_or(archive_path.stem().stem()), v);
