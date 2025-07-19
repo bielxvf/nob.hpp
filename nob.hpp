@@ -98,6 +98,7 @@ bool mkdir(const fs::path& path)
             return true;
         }
 
+        error(path, " already exists and is not a directory");
         return false;
     }
 
@@ -106,13 +107,15 @@ bool mkdir(const fs::path& path)
 
 void remove(const fs::path& path)
 {
-    info("Removing ", path);
+    warning("Removing ", path);
+    /* TODO: Ask for confirmation */
     fs::remove(path);
 }
 
 void remove_recursive(const fs::path& path)
 {
-    info("Removing recursively ", path);
+    warning("Removing recursively ", path);
+    /* TODO: Ask for confirmation */
     fs::remove_all(path);
 }
 
@@ -123,8 +126,9 @@ fs::path get_project_root()
 
 bool cd(const fs::path& path)
 {
+    info("Changing working dir to ", path);
     fs::current_path(path);
-    return true; /* TODO */
+    return true; /* TODO: Check fail */
 }
 
 class Cmd {
@@ -242,6 +246,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const Cmd& cmd)
     {
+        os << "Cmd working dir: " << cmd.m_working_dir << "; ";
         for (auto s : cmd.m_command) {
             os << s << ' ';
         }
