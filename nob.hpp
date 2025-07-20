@@ -49,7 +49,6 @@ enum class LogLevel {
 template<typename... Args>
 void log(std::ostream& out, LogLevel lvl, Args&&... args)
 {
-    /* TODO: Mutex shouldn't block different streams!! */
     static std::mutex mtx;
     std::lock_guard<std::mutex> lock(mtx);
 
@@ -108,14 +107,12 @@ bool mkdir(const fs::path& path)
 void remove(const fs::path& path)
 {
     warning("Removing ", path);
-    /* TODO: Ask for confirmation */
     fs::remove(path);
 }
 
 void remove_recursive(const fs::path& path)
 {
     warning("Removing recursively ", path);
-    /* TODO: Ask for confirmation */
     fs::remove_all(path);
 }
 
@@ -128,7 +125,7 @@ bool cd(const fs::path& path)
 {
     info("Changing working dir to ", path);
     fs::current_path(path);
-    return true; /* TODO: Check fail */
+    return true;
 }
 
 class Cmd {
@@ -184,7 +181,6 @@ public:
         }
     }
 
-    /* TODO: handle stderr */
     int run_sync_capture(std::ostream& out)
     {
         info("Running sync capture: ", *this);
@@ -374,7 +370,6 @@ bool extract_bz2(const fs::path& compressed,
     if (out) {
         /* Redirect to stdout and capture */
         cmd.add("-c");
-        /* TODO: Check error */
         std::ofstream outfile;
         outfile.open(out->string());
         if (outfile.is_open()) {
@@ -434,7 +429,6 @@ bool extract_gz(const fs::path& compressed,
     if (out) {
         /* Redirect to stdout and capture */
         cmd.add("-c");
-        /* TODO: Check error */
         std::ofstream outfile;
         outfile.open(out->string());
         if (outfile.is_open()) {
